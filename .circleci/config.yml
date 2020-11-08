@@ -1,18 +1,22 @@
-version: 2.1
-
-orbs:
-  maven: circleci/maven@0.0.12
-
-orbs:
-  codecov: codecov/codecov@1.0.2
+version: 2
 jobs:
   build:
+    docker:
+      - image: circleci/openjdk:8u181-jdk
+    working_directory: ~/repo
+    environment:
+      MAVEN_OPTS: -Xmx3200m
     steps:
-      - codecov/upload:
-          file: {{ coverage_report_filepath }}
-
-
-workflows:
-  maven_test:
-    jobs:
-      - maven/test # checkout, build, test, and upload test results
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-
+            - v1-dependencies-
+      - run: mvn install
+      - run: mvn test
+      - run: "mvn cobertura:cobertura"
+      - run: "bash <(curl -s https://codecov.io/bash)"
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-
